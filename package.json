@@ -1,0 +1,13 @@
+{
+  "name": "agentguard",
+  "type": "module",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}
