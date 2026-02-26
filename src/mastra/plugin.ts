@@ -1,9 +1,15 @@
-import { AuthorizationError, ToolAuthorizer, logDecision } from "../core/index.js";
+import {
+  AuthorizationError,
+  ToolAuthorizer,
+  extractDoctrineToolMetadataFromTool,
+  logDecision
+} from "../core/index.js";
 import type { AuditSink, ToolInvocationRequest } from "../core/index.js";
 
 export interface ToolCall {
   toolName: string;
   params: Record<string, unknown>;
+  tool?: unknown;
   context: {
     traceId: string;
     principal?: string;
@@ -25,10 +31,21 @@ export function createAgentGuardProcessor(
 ): ToolCallProcessor {
   return {
     async beforeToolCall(call: ToolCall): Promise<void> {
+      const doctrine = extractDoctrineToolMetadataFromTool(call.tool);
+      if (!doctrine) {
+        return;
+      }
+
       const request: ToolInvocationRequest = {
         toolName: call.toolName,
         params: call.params,
-        context: call.context
+        context: {
+          ...call.context,
+          claims: {
+            ...(call.context.claims ?? {}),
+            doctrine
+          }
+        }
       };
 
       const decision = await options.authorizer.authorize(request);
