@@ -1,6 +1,8 @@
-# AgentGuard
+# Doctrine
 
-AgentGuard is a policy enforcement layer for agent tool governance.
+Doctrine is a policy enforcement layer for agent tool governance.
+
+Package name: `ai-doctrine`.
 
 This repository is scaffolded as a single package with modular folders:
 
