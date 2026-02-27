@@ -1,3 +1,5 @@
+import { statSync } from "node:fs";
+
 export interface PolicyPathOptions {
   policyPath?: string;
 }
@@ -15,4 +17,16 @@ export function resolvePolicyPath(
   }
 
   return "agentguard/policies";
+}
+
+export function validateResolvedPolicyPath(path: string): void {
+  try {
+    const stats = statSync(path);
+    if (!stats.isDirectory()) {
+      throw new Error("resolved policy path is not a directory");
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown_error";
+    throw new Error(`Invalid policy path '${path}': ${message}`);
+  }
 }

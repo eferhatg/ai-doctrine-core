@@ -1,0 +1,5 @@
+{
+  "schema": "schema.cedar",
+  "policies": "policies.cedar",
+  "entities": "entities.json"
+}

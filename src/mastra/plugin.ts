@@ -2,7 +2,9 @@ import {
   AuthorizationError,
   ToolAuthorizer,
   extractDoctrineToolMetadataFromTool,
-  logDecision
+  logDecision,
+  resolvePolicyPath,
+  validateResolvedPolicyPath
 } from "../core/index.js";
 import type { AuditSink, ToolInvocationRequest } from "../core/index.js";
 
@@ -24,11 +26,36 @@ export interface ToolCallProcessor {
 export interface AgentGuardProcessorOptions {
   authorizer: ToolAuthorizer;
   auditSink: AuditSink;
+  policyPath?: string;
+  env?: Record<string, string | undefined>;
+  validatePolicyPathOnStartup?: boolean;
+}
+
+function validateAgentGuardProcessorOptions(options: AgentGuardProcessorOptions): void {
+  if (!options.authorizer || typeof options.authorizer.authorize !== "function") {
+    throw new TypeError("AgentGuard processor requires a valid authorizer");
+  }
+
+  if (!options.auditSink || typeof options.auditSink.write !== "function") {
+    throw new TypeError("AgentGuard processor requires a valid audit sink");
+  }
+
+  if (options.validatePolicyPathOnStartup === false) {
+    return;
+  }
+
+  const resolvedPolicyPath = resolvePolicyPath(
+    { policyPath: options.policyPath },
+    options.env ?? process.env
+  );
+  validateResolvedPolicyPath(resolvedPolicyPath);
 }
 
 export function createAgentGuardProcessor(
   options: AgentGuardProcessorOptions
 ): ToolCallProcessor {
+  validateAgentGuardProcessorOptions(options);
+
   return {
     async beforeToolCall(call: ToolCall): Promise<void> {
       const doctrine = extractDoctrineToolMetadataFromTool(call.tool);
