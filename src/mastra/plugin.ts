@@ -1,5 +1,6 @@
 import {
   AuthorizationError,
+  parseDoctrineToolMetadata,
   ToolAuthorizer,
   extractDoctrineToolMetadataFromTool,
   logDecision,
@@ -7,6 +8,7 @@ import {
   validateResolvedPolicyPath
 } from "../core/index.js";
 import type { AuditSink, ToolInvocationRequest } from "../core/index.js";
+import type { DoctrineToolMetadata } from "../core/index.js";
 
 export interface ToolCall {
   toolName: string;
@@ -21,6 +23,18 @@ export interface ToolCall {
 
 export interface ToolCallProcessor {
   beforeToolCall(call: ToolCall): Promise<void>;
+  processOutputStep?(args: ProcessOutputStepArgs): Promise<ProcessorMessageResult>;
+}
+
+export interface ProcessOutputStepArgs {
+  toolCalls?: ToolCall[];
+  currentStepOutput?: {
+    toolCalls?: ToolCall[];
+  };
+}
+
+export interface ProcessorMessageResult {
+  messages?: unknown[];
 }
 
 export interface AgentGuardProcessorOptions {
@@ -29,6 +43,7 @@ export interface AgentGuardProcessorOptions {
   policyPath?: string;
   env?: Record<string, string | undefined>;
   validatePolicyPathOnStartup?: boolean;
+  toolMetadataByName?: Record<string, DoctrineToolMetadata>;
 }
 
 function validateAgentGuardProcessorOptions(options: AgentGuardProcessorOptions): void {
@@ -51,6 +66,35 @@ function validateAgentGuardProcessorOptions(options: AgentGuardProcessorOptions)
   validateResolvedPolicyPath(resolvedPolicyPath);
 }
 
+function getDoctrineMetadata(
+  call: ToolCall,
+  options: AgentGuardProcessorOptions
+): DoctrineToolMetadata | null {
+  const fromTool = extractDoctrineToolMetadataFromTool(call.tool);
+  if (fromTool) {
+    return fromTool;
+  }
+
+  const fromRegistry = options.toolMetadataByName?.[call.toolName];
+  if (!fromRegistry) {
+    return null;
+  }
+
+  return parseDoctrineToolMetadata(fromRegistry);
+}
+
+function getStepToolCalls(args: ProcessOutputStepArgs): ToolCall[] {
+  if (Array.isArray(args.toolCalls)) {
+    return args.toolCalls;
+  }
+
+  if (Array.isArray(args.currentStepOutput?.toolCalls)) {
+    return args.currentStepOutput.toolCalls;
+  }
+
+  return [];
+}
+
 export function createAgentGuardProcessor(
   options: AgentGuardProcessorOptions
 ): ToolCallProcessor {
@@ -58,7 +102,7 @@ export function createAgentGuardProcessor(
 
   return {
     async beforeToolCall(call: ToolCall): Promise<void> {
-      const doctrine = extractDoctrineToolMetadataFromTool(call.tool);
+      const doctrine = getDoctrineMetadata(call, options);
       if (!doctrine) {
         return;
       }
@@ -81,6 +125,14 @@ export function createAgentGuardProcessor(
       if (!decision.allowed) {
         throw new AuthorizationError(decision.reasonCode);
       }
+    },
+
+    async processOutputStep(args: ProcessOutputStepArgs): Promise<ProcessorMessageResult> {
+      for (const call of getStepToolCalls(args)) {
+        await this.beforeToolCall(call);
+      }
+
+      return { messages: [] };
     }
   };
 }

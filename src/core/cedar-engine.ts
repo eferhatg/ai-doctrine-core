@@ -21,12 +21,22 @@ export interface CedarAdapterOptions {
   action?: string;
 }
 
+function resolveActionFromClaims(claims: Record<string, unknown> | undefined): string | undefined {
+  const doctrine = claims?.doctrine;
+  if (!doctrine || typeof doctrine !== "object" || Array.isArray(doctrine)) {
+    return undefined;
+  }
+
+  const action = (doctrine as Record<string, unknown>).action;
+  return typeof action === "string" ? action : undefined;
+}
+
 export function toCedarAuthorizationRequest(
   request: ToolInvocationRequest,
   options: CedarAdapterOptions = {}
 ): CedarAuthorizationRequest {
   const principalId = request.context.principal ?? "anonymous";
-  const action = options.action ?? "execute";
+  const action = options.action ?? resolveActionFromClaims(request.context.claims) ?? "execute";
 
   return {
     principal: `Agent::${principalId}`,
