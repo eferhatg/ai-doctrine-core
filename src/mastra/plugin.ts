@@ -9,6 +9,7 @@ import {
 } from "../core/index.js";
 import type { AuditSink, ToolInvocationRequest } from "../core/index.js";
 import type { DoctrineToolMetadata } from "../core/index.js";
+import type { Processor } from "@mastra/core/processors";
 
 export interface ToolCall {
   toolName: string;
@@ -25,6 +26,8 @@ export interface ToolCallProcessor {
   beforeToolCall(call: ToolCall): Promise<void>;
   processOutputStep?(args: ProcessOutputStepArgs): Promise<ProcessorMessageResult>;
 }
+
+export interface AgentGuardProcessor extends Processor, ToolCallProcessor {}
 
 export interface ProcessOutputStepArgs {
   toolCalls?: ToolCall[];
@@ -97,10 +100,12 @@ function getStepToolCalls(args: ProcessOutputStepArgs): ToolCall[] {
 
 export function createAgentGuardProcessor(
   options: AgentGuardProcessorOptions
-): ToolCallProcessor {
+): AgentGuardProcessor {
   validateAgentGuardProcessorOptions(options);
 
   return {
+    name: "doctrine-guard",
+
     async beforeToolCall(call: ToolCall): Promise<void> {
       const doctrine = getDoctrineMetadata(call, options);
       if (!doctrine) {
