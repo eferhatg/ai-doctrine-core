@@ -1,14 +1,15 @@
 {
-  "name": "ai-doctrine",
+  "name": "@ai-doctrine/core",
   "type": "module",
-  "private": true,
   "version": "0.1.0",
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test \"src/**/*.test.ts\""
+    "test": "node --import tsx --test \"src/core/**/*.test.ts\""
+  },
+  "exports": {
+    ".": "./src/core/index.ts"
   },
   "devDependencies": {
-    "@mastra/core": "^0.24.9",
     "@types/node": "^25.3.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.2"

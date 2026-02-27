@@ -2,12 +2,11 @@
 
 Doctrine is a policy enforcement layer for agent tool governance.
 
-Package name: `ai-doctrine`.
+Package name: `@ai-doctrine/core`.
 
-This repository is scaffolded as a single package with modular folders:
+This repository contains the framework-agnostic Doctrine core runtime:
 
-- `src/core`: framework-agnostic authorization runtime
-- `src/mastra`: Mastra integration helpers and addon APIs
+- `src/core`: authorization runtime, policy loading, decision contracts, and metadata parsing
 
 ## Status
 
@@ -18,7 +17,8 @@ This is an implementation scaffold derived from the OpenSpec delta:
 - deny precedence support
 - structured audit logging hooks
 - safe hot reload primitives
-- plugin-style Mastra integration surface
+
+Mastra integration lives in a separate package: `@ai-doctrine/mastra`.
 
 ## Layout
 
