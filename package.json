@@ -1,18 +1,22 @@
 {
   "name": "@ai-doctrine/core",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "files": [
-    "src/core",
+    "dist/core",
     "agentguard/policies",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test \"src/core/**/*.test.ts\""
   },
   "exports": {
-    ".": "./src/core/index.ts"
+    ".": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    }
   },
   "devDependencies": {
     "@types/node": "^25.3.1",
